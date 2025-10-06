@@ -3,9 +3,9 @@
 
 # get diffie-hellman variables
 g = 5 # TODO generate g p a b automatically
-p = 47 # TODO safely send g and p (3rd party?)
-a = 3
-b = 7
+p = 47 # TODO make p sufficiently large so it can be send publicly
+a = 3 # not larger than p
+b = 7 # not larger than p
 
 # calculate message
 h_a = (g**a) %p
