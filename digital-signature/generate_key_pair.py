@@ -1,5 +1,6 @@
-#generate asymmetric key pair
-# TODO - impementing RSA algorithm 
+
+#-------- GENERATE ASYMMETRIC KEY PAIRS -------#
+# TODO - impementing RSA algorithm from scracth 
 
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
@@ -28,16 +29,31 @@ with open("public_key.pem","wb") as f:
         format=serialization.PublicFormat.SubjectPublicKeyInfo
     ))
 
+#print the result key pairs 
+private_key_pem = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM ,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm = serialization.NoEncryption()
+    )
+
+public_key_pem = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+
+print(private_key_pem + '\n\n')
+print(public_key + '\n\n')
 
 
 
-
+#--------- SIGNNING THE MESSAGE ----------#
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding 
 
 
 # Message to be signed 
 message = b"hello, this is a random message!"
+print("message content: " + message)
 
 #load the private key
 with open("private_key.pem","rb") as f:
@@ -46,6 +62,10 @@ with open("private_key.pem","rb") as f:
         password=None)
 
 #sign the message 
+hasher = hashes.Hash(hashes.SHA256())
+hasher.update(message)
+digest = hasher.finalize()
+
 signature = private_key.sign(
     message, 
     padding.PSS(
@@ -55,10 +75,10 @@ signature = private_key.sign(
     hashes.SHA256()
     )
 
+#---------- VERIFING THE SIGNATURE ---------#
 #save the signature to a file 
 with open("signature.bin","wb") as f:
     f.write(signature)
-
 
 #load the public key
 with open("public_Key.pem","rb") as f:
