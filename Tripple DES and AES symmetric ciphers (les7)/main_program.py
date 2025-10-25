@@ -1,5 +1,4 @@
 import base64
-import json
 from Crypto.Cipher import AES, DES3
 from Crypto.Util.Padding import pad, unpad
 from Crypto.Random import get_random_bytes
@@ -60,12 +59,12 @@ def encrypt_message(algorithm: str, plaintext: bytes):
         aad = b"metadata"
         encrypted_package = encrypt_with_aes_eax(key, plaintext, aad)
         encrypted_package.update({"algorithm": "AES-EAX", "key": b64(key)})
-        return encrypted_package, key
+        return encrypted_package
     elif algorithm == "3DES":
         key = DES3.adjust_key_parity(get_random_bytes(24))
         encrypted_package = encrypt_with_3des(key, plaintext)
         encrypted_package.update({"algorithm": "3DES-CBC", "key": b64(key)})
-        return encrypted_package, key
+        return encrypted_package
 
 def decrypt_message(encrypted_package: dict) -> bytes:
     algorithm = encrypted_package["algorithm"]
@@ -93,23 +92,6 @@ def menu():
         else:
             print("Invalid choice! Please enter 1 or 2.\n")
 
-# ---------- Save to Files ----------
-
-def save_files(plaintext: str, key: bytes, encrypted_package: dict):
-    # Save plaintext
-    with open("plaintext.txt", "w", encoding="utf-8") as f:
-        f.write(plaintext)
-    # Save key in base64
-    with open("key.txt", "w") as f:
-        f.write(b64(key))
-    # Save encrypted package as JSON
-    with open("encrypted_package.json", "w") as f:
-        json.dump(encrypted_package, f, indent=4)
-    print("\nFiles saved:")
-    print("- plaintext.txt")
-    print("- key.txt")
-    print("- encrypted_package.json")
-
 # ---------- Main ----------
 
 def main():
@@ -124,28 +106,16 @@ def main():
     print(f"\nSelected algorithm: {algorithm}\n")
 
     # Encrypt
-    encrypted_package, key = encrypt_message(algorithm, plaintext)
+    encrypted_package = encrypt_message(algorithm, plaintext)
     print("Encryption Result:")
     for k, v in encrypted_package.items():
         print(f"{k}: {v[:80]}{'...' if len(v) > 80 else ''}")
 
-    # Save files
-    save_files(lorem_text, key, encrypted_package)
-
-    # Ask user if they want to decrypt
-    while True:
-        choice = input("\nDo you want to decrypt the message? (y/n): ").strip().lower()
-        if choice == "y":
-            decrypted = decrypt_message(encrypted_package)
-            print("\nDecryption Result:")
-            print("Recovered message:", decrypted.decode())
-            print("Decryption OK?", decrypted == plaintext)
-            break
-        elif choice == "n":
-            print("Decryption skipped.")
-            break
-        else:
-            print("Invalid input! Please enter 'y' or 'n'.")
+    # Decrypt
+    decrypted = decrypt_message(encrypted_package)
+    print("\nDecryption Result:")
+    print("Recovered message:", decrypted.decode())
+    print("Decryption OK?", decrypted == plaintext)
 
 if __name__ == "__main__":
     main()
