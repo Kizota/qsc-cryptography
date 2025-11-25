@@ -1,109 +1,151 @@
+import base64
+import json
+from Crypto.Cipher import AES, DES3
+from Crypto.Util.Padding import pad, unpad
+from Crypto.Random import get_random_bytes
+import lorem  # pip install lorem
 
-#-------- GENERATE ASYMMETRIC KEY PAIRS -------#
-# TODO - impementing RSA algorithm from scracth 
+# ---------- Utility Helpers ----------
 
-from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.hazmat.primitives import serialization
+def b64(x: bytes) -> str:
+    return base64.b64encode(x).decode()
 
-#generate private key
-private_key = rsa.generate_private_key(
-    public_exponent=65537, 
-    key_size=2048,
-    )
+def ub64(x: str) -> bytes:
+    return base64.b64decode(x.encode())
 
-#generate public key from private key
-public_key = private_key.public_key()
+# ---------- AES-EAX Implementation ----------
 
-#save the private key to a file
-with open("private_key.pem","wb") as f:
-    f.write(private_key.private_bytes(
-        encoding=serialization.Encoding.PEM ,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm = serialization.NoEncryption()
-    ))
+def encrypt_with_aes_eax(key: bytes, plaintext: bytes, aad: bytes = None) -> dict:
+    cipher = AES.new(key, AES.MODE_EAX, nonce=get_random_bytes(16))
+    if aad:
+        cipher.update(aad)
+    ciphertext, tag = cipher.encrypt_and_digest(plaintext)
+    return {
+        "nonce": b64(cipher.nonce),
+        "ciphertext": b64(ciphertext),
+        "tag": b64(tag),
+        "aad": b64(aad) if aad else None,
+    }
 
-#save the public key to a file 
-with open("public_key.pem","wb") as f:
-    f.write(public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    ))
+def decrypt_with_aes_eax(key: bytes, encrypted_package: dict) -> bytes:
+    nonce = ub64(encrypted_package["nonce"])
+    ciphertext = ub64(encrypted_package["ciphertext"])
+    tag = ub64(encrypted_package["tag"])
+    aad = ub64(encrypted_package["aad"]) if encrypted_package.get("aad") else None
+    cipher = AES.new(key, AES.MODE_EAX, nonce=nonce)
+    if aad:
+        cipher.update(aad)
+    return cipher.decrypt_and_verify(ciphertext, tag)
 
-#print the result key pairs 
-private_key_pem = private_key.private_bytes(
-        encoding=serialization.Encoding.PEM ,
-        format=serialization.PrivateFormat.PKCS8,
-        encryption_algorithm = serialization.NoEncryption()
-    )
+# ---------- TripleDES-CBC Implementation (No HMAC) ----------
 
-public_key_pem = public_key.public_bytes(
-        encoding=serialization.Encoding.PEM,
-        format=serialization.PublicFormat.SubjectPublicKeyInfo
-    )
+def encrypt_with_3des(key: bytes, plaintext: bytes) -> dict:
+    iv = get_random_bytes(8)
+    cipher = DES3.new(key, DES3.MODE_CBC, iv)
+    ciphertext = cipher.encrypt(pad(plaintext, 8))
+    return {"iv": b64(iv), "ciphertext": b64(ciphertext)}
 
-print(private_key_pem + '\n\n')
-print(public_key + '\n\n')
+def decrypt_with_3des(key: bytes, encrypted_package: dict) -> bytes:
+    iv = ub64(encrypted_package["iv"])
+    ciphertext = ub64(encrypted_package["ciphertext"])
+    cipher = DES3.new(key, DES3.MODE_CBC, iv)
+    padded = cipher.decrypt(ciphertext)
+    return unpad(padded, 8)
 
+# ---------- Unified Interface ----------
 
+def encrypt_message(algorithm: str, plaintext: bytes):
+    if algorithm == "AES":
+        key = get_random_bytes(32)
+        aad = b"metadata"
+        encrypted_package = encrypt_with_aes_eax(key, plaintext, aad)
+        encrypted_package.update({"algorithm": "AES-EAX", "key": b64(key)})
+        return encrypted_package, key
+    elif algorithm == "3DES":
+        key = DES3.adjust_key_parity(get_random_bytes(24))
+        encrypted_package = encrypt_with_3des(key, plaintext)
+        encrypted_package.update({"algorithm": "3DES-CBC", "key": b64(key)})
+        return encrypted_package, key
 
-#--------- SIGNNING THE MESSAGE ----------#
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import padding 
+def decrypt_message(encrypted_package: dict) -> bytes:
+    algorithm = encrypted_package["algorithm"]
+    if algorithm == "AES-EAX":
+        key = ub64(encrypted_package["key"])
+        return decrypt_with_aes_eax(key, encrypted_package)
+    elif algorithm == "3DES-CBC":
+        key = ub64(encrypted_package["key"])
+        return decrypt_with_3des(key, encrypted_package)
+    else:
+        raise ValueError("Unknown algorithm metadata.")
 
+# ---------- Menu ----------
 
-# Message to be signed 
-message = b"hello, this is a random message!"
-print("message content: " + message)
+def menu():
+    while True:
+        print("Encryption Menu")
+        print("1. Triple DES")
+        print("2. AES")
+        choice = input("Enter your choice (1 or 2): ").strip()
+        if choice == "1":
+            return "3DES"
+        elif choice == "2":
+            return "AES"
+        else:
+            print("Invalid choice! Please enter 1 or 2.\n")
 
-#load the private key
-with open("private_key.pem","rb") as f:
-    private_Key = serialization.load_pem_private_key(
-        f.read(),
-        password=None)
+# ---------- Save to Files ----------
 
-#sign the message 
-hasher = hashes.Hash(hashes.SHA256())
-hasher.update(message)
-digest = hasher.finalize()
+def save_files(plaintext: str, key: bytes, encrypted_package: dict):
+    # Save plaintext
+    with open("plaintext.txt", "w", encoding="utf-8") as f:
+        f.write(plaintext)
+    # Save key in base64
+    with open("key.txt", "w") as f:
+        f.write(b64(key))
+    # Save encrypted package as JSON
+    with open("encrypted_package.json", "w") as f:
+        json.dump(encrypted_package, f, indent=4)
+    print("\nFiles saved:")
+    print("- plaintext.txt")
+    print("- key.txt")
+    print("- encrypted_package.json")
 
-signature = private_key.sign(
-    message, 
-    padding.PSS(
-        mgf=padding.MGF1(hashes.SHA256()),
-        salt_length=padding.PSS.MAX_LENGTH
-    ),
-    hashes.SHA256()
-    )
+# ---------- Main ----------
 
-#---------- VERIFING THE SIGNATURE ---------#
-#save the signature to a file 
-with open("signature.bin","wb") as f:
-    f.write(signature)
+def main():
+    # Generate random Lorem Ipsum each run
+    lorem_text = lorem.paragraph()
+    plaintext = lorem_text.encode()
 
-#load the public key
-with open("public_Key.pem","rb") as f:
-     public_key = serialization.load_pem_public_key(f.read())
+    print("Generated Lorem Ipsum:")
+    print(lorem_text, "\n")
 
-#load the signature 
-with open("signature.bin","rb") as f:
-    signature = f.read()
+    algorithm = menu()
+    print(f"\nSelected algorithm: {algorithm}\n")
 
-#Message to be verified
-message = b"hello, this is a random message!"
+    # Encrypt
+    encrypted_package, key = encrypt_message(algorithm, plaintext)
+    print("Encryption Result:")
+    for k, v in encrypted_package.items():
+        print(f"{k}: {v[:80]}{'...' if len(v) > 80 else ''}")
 
-#verify the signature 
-try:
-     public_key.verify(
-         signature,
-         message,
-         padding.PSS(
-             mgf=padding.MGF1(hashes.SHA256()),
-             salt_length=padding.PSS.MAX_LENGTH
-         ),
-         hashes.SHA256()
-     )
-     print ("the signature is valid.")
+    # Save files
+    save_files(lorem_text, key, encrypted_package)
 
-except:
-    [print("the signature is invalid.")]
+    # Ask user if they want to decrypt
+    while True:
+        choice = input("\nDo you want to decrypt the message? (y/n): ").strip().lower()
+        if choice == "y":
+            decrypted = decrypt_message(encrypted_package)
+            print("\nDecryption Result:")
+            print("Recovered message:", decrypted.decode())
+            print("Decryption OK?", decrypted == plaintext)
+            break
+        elif choice == "n":
+            print("Decryption skipped.")
+            break
+        else:
+            print("Invalid input! Please enter 'y' or 'n'.")
 
+if __name__ == "__main__":
+    main()
