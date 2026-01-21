@@ -1,0 +1,8 @@
+C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/CMakeFiles/bike_kem.dir
+C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/CMakeFiles/bike_test.dir
+C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/CMakeFiles/bike_demo.dir
+C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/CMakeFiles/bike_eval.dir
+C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/CMakeFiles/bike_kem_shared.dir
+C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/CMakeFiles/INSTALL.dir
+C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/CMakeFiles/ZERO_CHECK.dir

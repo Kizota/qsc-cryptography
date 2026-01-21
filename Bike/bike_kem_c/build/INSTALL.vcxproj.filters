@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\hokie\OneDrive\Documents\Minor_QSC_2025_26\program\qsc-software-project\bike_kem_c\build\CMakeFiles\2c6f5e2c6b89d65a762448cc1825d223\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{F24836D8-D600-30B5-8F09-359507491D13}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

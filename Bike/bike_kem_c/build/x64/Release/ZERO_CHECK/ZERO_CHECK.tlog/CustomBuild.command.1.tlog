@@ -1,0 +1,10 @@
+^C:\USERS\HOKIE\ONEDRIVE\DOCUMENTS\MINOR_QSC_2025_26\PROGRAM\QSC-SOFTWARE-PROJECT\BIKE_KEM_C\BUILD\CMAKEFILES\2C6F5E2C6B89D65A762448CC1825D223\GENERATE.STAMP.RULE
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c -BC:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build --check-stamp-list CMakeFiles/generate.stamp.list --vs-solution-file C:/Users/hokie/OneDrive/Documents/Minor_QSC_2025_26/program/qsc-software-project/bike_kem_c/build/BIKE_KEM.sln
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
